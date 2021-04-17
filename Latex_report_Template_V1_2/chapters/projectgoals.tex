@@ -1,0 +1,21 @@
+\chapter{Project Goals}
+\label{chap:projectgoals}
+
+\section{Reference Data Sets for Training und Test data}
+\label{sec:refdata_sets}
+
+The goal is to have accurate and consistent data sets, which are stored in a format that makes use of the Microservice based MOVEm Data Management Toolchain. Namely these test sets should fulfil the following criteria:
+
+\begin{itemize}
+\item Accuracy: Data in test sets has been checked for correct labeling and or given a label in case it was missing.
+\item Consistency: Different adaptations for the same currency should use the same data sets. 
+\end{itemize}
+\section{Mechanism for subclassifying Data Sets according to context-dependent criteria }
+\label{sec:custom datasets}
+It should be possible to generate data sets according to user specific criteria like: "All EUR notes that were classified as fake", "All USD notes for which tape was detected".
+\section{Automated process for generating and maintaining Reference Note Data Sets}
+\label{sec:automated_process}
+A process has to be defined for generating Reference Data Sets automatically as well as updating and expanding them when new data is added to the Data Pool.
+
+
+
