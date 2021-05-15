@@ -37,6 +37,10 @@
 \usepackage{caption}													% for captions of figures and tables
 \usepackage{booktabs}													% package for nicer tables
 \usepackage{tocvsec2}													% provides means of controlling the sectional numbering
+\usepackage{newunicodechar}
+
+\newcommand{\textprime}{\ensuremath{'}}
+\newunicodechar{′}{\textprime}
 %---------------------------------------------------------------------------
 
 % Load Math Packages
@@ -176,18 +180,18 @@
 %---------------------------------------------------------------------------
 \pagenumbering{arabic}
 
+\include{chapters/projectintroduction}
 \include{chapters/projectgoals}
-\include{chapters/instructions}
-\include{chapters/typeareatest}
-\include{chapters/conclusions}
+\include{chapters/projectsteps}
+\include{chapters/technicaldocu}
 %---------------------------------------------------------------------------
 
 % Declaration of Authorship
 %---------------------------------------------------------------------------
-\cleardoublepage
-\phantomsection 
-\addcontentsline{toc}{chapter}{Declaration of authorship}
-\include{leader/declaration_authorship}
+%\cleardoublepage
+%\phantomsection 
+%\addcontentsline{toc}{chapter}{Declaration of authorship}
+%\include{leader/declaration_authorship}
 %---------------------------------------------------------------------------
 
 % Glossary
@@ -195,7 +199,7 @@
 \cleardoublepage
 \phantomsection 
 \addcontentsline{toc}{chapter}{Glossay}
-%\renewcommand{\glossaryname}{Glossay}
+\renewcommand{\glossaryname}{Glossay}
 \printglossary
 %---------------------------------------------------------------------------
 

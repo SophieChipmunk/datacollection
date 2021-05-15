@@ -1,21 +1,63 @@
 \chapter{Project Goals}
 \label{chap:projectgoals}
 
-\section{Reference Data Sets for Training und Test data}
-\label{sec:refdata_sets}
+\section{Initial Position}
+\subsection{Background}
+The 80/20 rule of Data Science states that most data scientist spend about 20\% of their time on actual data analysis and 80\% of their time finding, cleaning and preparing data. The process of readying data for the training, testing and implementation of an algorithm thus is not only a highly important step in the Data Science Lifecycle, it's maybe the costliest.\par
+CI Tech Sensors has over 30 years experience in the field of Banknote Image recognition. One of its core competences is the development of currency adaptation software. Namely the so-called Currency Data File is a software, which is loaded onto the banknote reader, and enables it to identify and classify banknotes for specific currencies, as well as determine their fitness and authenticity. This software is continuously updated and developed by a dedicated team of Currency Adaptation Specialists at CI Tech Sensors, whose work relies on the availability of a huge data pool of Banknote Raw Data. \par
+Over the last three years, there has been ground-breaking shift in raw data management: From folder-based data storage on both local and central file drives -  which heavily relied on filenames for identification and was thus prone to ambiguity and duplication of data - towards a centralized data pool, where each file was given a unique ID. At the same time a cloud based Microservice architecture (MOVEm Data Management Toolchain) for the management and maintenance of this data pool was developed.
+This development comes with a number of exciting possibilities, some of which to explore is the goal of this project. The focus will be on the collection and preparation of tailored banknote sets.\par
 
-The goal is to have accurate and consistent data sets, which are stored in a format that makes use of the Microservice based MOVEm Data Management Toolchain. Namely these test sets should fulfil the following criteria:
+In earlier days, the collection and preparation of banknote data had to be manually done by the Currency Adaptation Specialist. They would have to navigate to the relevant folder, select the relevant files and sort them by denomination, emission, orientation and other criteria, an information taken from a file's annotation. Not only is this process cumbersome and error-prone in itself, it also solely relies on the file annotation, which is made by a human annotator before the actual banknote recording, and thus can contain errors as well. \par
+Today it's already possible to group banknote raw data into sets, using a text-based file format called notelist file . Adaptations specialists will manage and create their own notelist files locally according to their specific needs. Notelists contain references to individual file IDs and Note IDs as well as additional annotational information and the file path where files can be found. However this format comes with some problems of its own.\par
+
+\subsection{Overview of the existing CI Tech adaptation toolchain }
+
+In this section a short overview is given over some of the tool in the existing CI Tech adaptation toolchain. This list is by far not exhaustive and only names the tools which are mot relevant to the project at hand
+\begin{itemize}
+\item \emph{MCM} (MOVE Currency Data Modeller) is a desktop application and the main tool of currency adaptation specialists in their daily work. It is used to develop, test and adapt so called \emph{Currency Data Files}, the software which is loaded onto the banknote reader and enables it to recognize and classify banknotes. MCM is a software monolith that has grown and extended its functionality over decades, but it doesn't lend itself very easily to modularization. MCM is also the interface to the entire algorithmic framework. Recordings of banknotes can be loaded from the filesystem as .NIF files (binary files) or .nl (XML Format) files. The latter also allows loading notes from the central Data Pool via MFX instead of the local file system.
+
+\item \emph{MFX} (MOVE File Index) is a web based microservice that allows the lookup of files from the central Data Pool. Namely, it allows to retrieve the storage path in the pool for a given File ID. Using this service, MCM can load files by File ID instead of a file path.
+
+\item \emph{MDS} (MOVE Data Service) is a web based microservice that allows the lookup of note and image data. It allows to query the most relevant note data found in the (binary) .NIF files as well as images via REST api. A future vision which is in ongoing development is that entire sets of notes could be loaded into MCM via this REST interface instead of parsing large amounts of binary data. 
+
+
+\end{itemize}
+\subsection{Stakeholders}
+\begin{itemize}
+\item The Head of Application Software will supervise the project and provide technical advice
+\item The Head of Currency Adaptation will provide additional support from the perspective of Currency Adaptation specialists.
+\item The Currency Adaptation team will be the primary user group
+\end{itemize}
+
+\section{Project Goals}
+\label{sec:goals}
+
+
+\subsection{Accurate, consistent and complete reference data sets}
+The goal is to have accurate and consistent data sets, which are generated and persisted in a way that makes use of the Microservice based MOVEm Data Management Toolchain. Namely these test sets should fulfil the following criteria:
 
 \begin{itemize}
 \item Accuracy: Data in test sets has been checked for correct labeling and or given a label in case it was missing.
 \item Consistency: Different adaptations for the same currency should use the same data sets. 
-\end{itemize}
-\section{Mechanism for subclassifying Data Sets according to context-dependent criteria }
-\label{sec:custom datasets}
-It should be possible to generate data sets according to user specific criteria like: "All EUR notes that were classified as fake", "All USD notes for which tape was detected".
-\section{Automated process for generating and maintaining Reference Note Data Sets}
-\label{sec:automated_process}
-A process has to be defined for generating Reference Data Sets automatically as well as updating and expanding them when new data is added to the Data Pool.
+\item Completeness: In the generation of reference note data sets, all data in the pool should be considered.
 
+\end{itemize}
+
+
+
+
+\subsection{Mechanism for subclassifying Data Sets according to context-dependent criteria}
+
+It should be possible to generate data sets according to user specific criteria like: "All EUR notes that were classified as fake", "All USD notes for which tape was detected". 
+A process should be installed which allows specialist users to generate such datasets from queries. These datasets will have to fulfil the same criteria as the reference data sets.
+
+\subsection{Automated process for generating and maintaining Reference Note Data Sets}
+
+A process has to be defined for generating Reference Data Sets automatically as well as updating and expanding them when new data is added to the Data Pool. A process has to be defined for generating Reference Data Sets automatically as well as updating them when new data is added to the Data Pool. Part of this process is also the management of Reference Data Sets in a Version Control System. 
+
+\subsection{Technical Analysis of the existing Toolchain}
+
+To achieve the previously listed goals, the introduction of a new data container will be necessary to make the existing toolchain compatible with this new paradigm. While this shift can only happen over a longer period, it would be very undesirable to have a new data container or format which will only be deployable for a part of the toolchain. The goal is therefore to have an assessment on the feasibility of implementing the new data container into the existing toolchain. 
 
 
