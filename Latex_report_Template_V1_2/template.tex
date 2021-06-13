@@ -9,7 +9,7 @@
 \documentclass[
 	a4paper,					% paper format
 	10pt,							% fontsize
-	twoside,					% double-sided
+	oneside,					% double-sided
 	openright,				% begin new chapter on right side
 	notitlepage,			% use no standard title page
 	parskip=half,			% set paragraph skip to half of a line
@@ -38,6 +38,8 @@
 \usepackage{booktabs}													% package for nicer tables
 \usepackage{tocvsec2}													% provides means of controlling the sectional numbering
 \usepackage{newunicodechar}
+\usepackage[bottom]{footmisc}
+\usepackage{sectsty}
 
 \newcommand{\textprime}{\ensuremath{'}}
 \newunicodechar{′}{\textprime}
@@ -101,7 +103,10 @@
 	footskip=15mm
 }
 %---------------------------------------------------------------------------
+% Use Text Boxes
+%---------------------------------------------------------------------------
 
+%---------------------------------------------------------------------------
 % Makeindex Package
 %---------------------------------------------------------------------------
 \usepackage{makeidx}                         		% To produce index
@@ -183,7 +188,10 @@
 \include{chapters/projectintroduction}
 \include{chapters/projectgoals}
 \include{chapters/projectsteps}
+\include{chapters/technicalbackground}
 \include{chapters/technicaldocu}
+\include{chapters/nsgeneration}
+\include{chapters/conclusions}
 %---------------------------------------------------------------------------
 
 % Declaration of Authorship
@@ -198,18 +206,9 @@
 %---------------------------------------------------------------------------
 \cleardoublepage
 \phantomsection 
-\addcontentsline{toc}{chapter}{Glossay}
-\renewcommand{\glossaryname}{Glossay}
+\addcontentsline{toc}{chapter}{Glossary}
+\renewcommand{\glossaryname}{Glossary}
 \printglossary
-%---------------------------------------------------------------------------
-
-% Bibliography
-%---------------------------------------------------------------------------
-\cleardoublepage
-\phantomsection 
-\addcontentsline{toc}{chapter}{Bibliography}
-\bibliographystyle{IEEEtranS}
-\bibliography{database/bibliography}{}
 %---------------------------------------------------------------------------
 
 % Listings
@@ -218,10 +217,6 @@
 \phantomsection 
 \addcontentsline{toc}{chapter}{List of figures}
 \listoffigures
-\cleardoublepage
-\phantomsection 
-\addcontentsline{toc}{chapter}{List fo tables}
-\listoftables
 %---------------------------------------------------------------------------
 
 % Index
@@ -237,8 +232,8 @@
 \appendix
 \settocdepth{section}
 \include{appendix/appendixexemple}
-\include{appendix/appendixexempleB}
-\include{appendix/contentCDROM}
+%\include{appendix/appendixexempleB}
+%\include{appendix/contentCDROM}
 %---------------------------------------------------------------------------
 
 %---------------------------------------------------------------------------

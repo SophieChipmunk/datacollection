@@ -2,8 +2,67 @@
 \addcontentsline{toc}{chapter}{APPENDICES}
 
 \begingroup\let\clearpage\relax
-\chapter{Arbitrary Appendix}
-\label{chap:appendix_arb}
+\chapter{The pynoteset library}
+\label{chap:appendix_pns}
 \endgroup
 
-The European languages are members of the same family. Their separate existence is a myth. For science, music, sport, etc, Europe uses the same vocabulary. The languages only differ in their grammar, their pronunciation and their most common words. Everyone realizes why a new common language would be desirable: one could refuse to pay expensive translators. To achieve this, it would be necessary to have uniform grammar, pronunciation and more common words. If several languages coalesce, the grammar of the resulting language is more simple and regular than that of the individual languages. The new common language will be more simple and regular than the existing European languages. It will be as simple as Occidental; in fact, it will be Occidental. 
+The pynoteset library was developed within the scope of this project. Its purpose is to generate and handle the newly introduced NoteSet data container. This small library can theoretically be deployed in the entire Python toolchain of application software at CI Tech. An analogous implementation in C\# for the .NET toolchain is still pending
+
+\section{The NoteSet class}
+This is the base class representing a noteset object. A NoteSet represents a set of Note IDs. It can optionally contain an annotation property, which is of type NoteSetAnnotation.
+\subsection{from\_note\_id\_list(note\_id\_list)}
+\subsubsection{Description}
+Generates a NoteSet object from a list of Note IDs
+\subsubsection{Parameters}
+\begin{description}
+\item [note\_id\_list] A list of strings representing Note IDs.
+
+\end{description}
+
+\subsection{from\_note\_id\_list\_and\_annotation(note\_id\_list, annotation)}
+\subsubsection{Description}
+Generates a NoteSet object from a list of Note IDs and a NoteSetAnnotation object.
+\subsubsection{Parameters}
+\begin{description}
+\item [note\_id\_list] A list of strings representing Note IDs.
+\item [annotation] NoteSetAnnotation
+\end{description}
+
+
+\subsection{from\_notelistfile(nl\_file)}
+\subsubsection{Description}
+Generate a NoteSet object from a Notelistfile object, i.e. convert a Notelistfile into a NoteSet.
+\subsubsection{Parameters}
+\begin{description}
+\item [nl\_file] Notelistfile 
+\end{description}
+
+\subsection{diff(noteset\_1, noteset\_2)}
+\subsubsection{Description}
+Find the difference of two NoteSets. Return two notesets:
+\begin{itemize}
+	\item NoteSet of all elements contained in noteset\_1 but not noteset\_2
+	\item NoteSet of all elements contained in noteset\_2 but not noteset\_1
+\end{itemize}
+\subsubsection{Parameters}
+\begin{description}
+\item [noteset\_1] NoteSet
+\item [noteset\_2] NoteSet
+\end{description} 
+
+\subsection{merge(noteset\_1, noteset\_2)}
+\subsubsection{Description}
+Merge two NoteSets into a new NoteSet
+\subsubsection{Parameters}
+\begin{description}
+\item [noteset\_1] NoteSet
+\item [noteset\_2] NoteSet
+\end{description} 
+
+\subsection{export\_to\_ns\_file(filepath)}
+\subsubsection{Description}
+Save a NoteSet as ASCII file
+\subsubsection{Parameters}
+\begin{description}
+\item [filepath] string or path-like object
+\end{description}
