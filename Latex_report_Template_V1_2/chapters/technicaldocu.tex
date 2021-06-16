@@ -4,9 +4,17 @@
 \section{Note Set Specification}
 \subsection{Motivation}
 By introducing the Note Set as a new data container the primary goal is not to introduce a new data format. Firstly, because this would entail a longer process of defining a format schema and approval of various departments, the potential users of the new format, as well as a long introduction phase. Secondly, a data format is always restrictive in that it implies that this is the only correct way that data should and can be collected. The goal of introducing the Note Set is exactly the opposite: We want users to think of a data collection as exactly that: A collection of data elements, that at least for now does not come with a set of restrictions and rules of its own. In section \nameref{noteset_goal} we listed the advantages and requirements for the new data container. In this section the steps undertaken to reach them will be specified.
+\subsection{Problems with the Notelist format}
+Even though the Notelist format (see Section \ref{section:notelist}) has been established as a de facto standard, there are some disadvantages that come with it and that the introduction of the NoteSet data container hopes to address:
+\begin{itemize}
+\item Too much flexibility: Since Notelists are annotatable on a per-note basis and not on a per-set basis, there is no limit to mixing notes from different currencies, denomination etc. within the same list. This can lead to the temptation to store all notes a user works with over a timespan of months or longer in one single big Notelist. However this defeats one of the Notelist's original purpose of creating more clarity by storing notes into purpose-specific sets that can be re-used by others. 
+\item Readabililty: Large notelists can get hard to read, due to the bulk of annotational information which in most cases is redundant. 
+\item Insufficient congruity with MOVEm Data Service APIs: Since the Notelist Format requires the presence of a file path, it is not possible to directly generate Notelists from MDS queries. If we query notes from MDS we get back a JSON structure containing the note data stored in the NIF, but no file location (The file locations are managed my MFX). Thus, we have to get the file path for each File ID with an additional MFX query and thus increase the amount of queries. This is possible, but it slows down the generation of data sets.\footnote{The necessity of the file path in the Notelist hails from a time where the MFX service had not yet been establised. Therefore the Notelist needed to know the file location of each NIF on the local file system, in order to be able to load it. Today, where MFX is used to load the notes from the Data Pool, the NIF's File ID is enough information for locating and loading it.}\par Furthermore, the Notelist format requires the presence of an outdated GUID for each note. Consequently, while the Note ID is the unique note identifier in the universe of MDS and MFX, the Notelist always requires an additional identifier.
+\end{itemize}
 \subsection{Note Sets as equivalence classes}
 One distinguishing feature of Note Sets is that they will not have a per-note labelling but one labelling for the entire set, the Note Set annotation. This is in the spirit of the adaptation specialist's way of working with data, insofar that they are generally not interested in the individual notes as such, but rather in an algorithm's performance on a particular set of -- correctly labelled -- notes. Thus we can think of Note Sets as equivalence classes where the equivalence relation is defined by the Note Set's annotation. The Note Set Annotation is specified below in section \nameref{ns_annotation_spec}
 \subsection{Serialization}
+\label{subsection:ns_serialization}
 Since Note Sets are basically just a collection of IDs, we will store them as text files in ASCII format. Each line will ideally represent a note. We do allow the following rules and elisions, some of whose usage will make the serialized form more compact, if parsing slightly more complicated:
 \begin{enumerate}
 \item Notes within the same file can be listed on the same line, e.g.:
@@ -61,11 +69,11 @@ Since there is already a comprehensive Python toolchain for Adaptation Software,
 \item annotate NoteSet objects and parse string annotations
 \item merge NoteSet objects: for two NoteSets $A$ and $B$ generate the NoteSet $A \cup B$.
 \item intersect NoteSet objects: for two NoteSets $A$ and $B$ generate the NoteSet $A \cap B$.
-\item compare NoteSet objects: for two NoteSets $A$ and $B$ generate the NoteSEt $A\backslash B$ and $B\backslash A$. 
+\item compare NoteSet objects: for two NoteSets $A$ and $B$ generate the NoteSet $A\backslash B$ and $B\backslash A$. 
 \end{enumerate}
 
-The library consists of three main classes, the NoteSet class, the NoteSetAnnotation class and the NoteSetConverter class. The latter's purpose is to generate NoteSet objects from files and lists of strings, a functionality that was outsourced into a converter class because of a dependency on MDS. See the pynoteset class diagram figure \ref{fig:pynoteset} for reference.\
-Furthermore, a converter class NoteSet2Notelistfile has been added to the library \emph{notelistfile}, which allows the conversion of NoteSets to Notelistfile, the standard XML based format currently in use. This functionality is particularly powerful since a majority of the python toolchain already uses the Notelistfile model internally. This converter thus provides an interface for the NoteSet object to be used in other tools.\par
+The library consists of three main classes, the NoteSet class, the NoteSetAnnotation class and the NoteSetConverter class. The latter's purpose is to generate NoteSet objects from files and lists of strings, a functionality that was outsourced into a converter class because of a dependency on MDS, which I didn't want to have in the NoteSet class itself\footnote{The reason for this dependency is the generosity of the NoteSet serialization syntax as specified in section \ref{subsection:ns_serialization}: Remember that if we mean to include all the notes in a file, we can reference them just be the FileID. Internally however, the NoteSet object has to know the number of notes in a file. Therefore, in the case where just a FileID is given, we have to query the number of notes (property ``note\_count``) from the MDS API.} See the pynoteset class diagram figure \ref{fig:pynoteset} for reference.\
+Furthermore, a converter class NoteSet2Notelistfile has been added to the library \emph{notelistfile}, which allows the conversion of NoteSets to Notelist, the standard XML based format currently in use (cf. section \ref{section:notelist}) . This functionality is particularly powerful since a majority of the python toolchain already uses the a Notelist class internally. This converter thus provides an interface for the NoteSet object to be used in other tools.\par
 For deployment of this library a Bitbucket CI/CD pipeline is used, which deploys the package to a software repository manager (JFrog Artifactory). Thus registrered Artifactory users can install the pynoteset package like any other using pip.
 \begin{figure}
  \includegraphics[width=\linewidth]{images/pynoteset.png}
@@ -126,4 +134,9 @@ The examples in figure \nameref{fig:ns_example} illustrate the application of th
 
 A parser for annotation strings was included in the pynoteset library and since we have defined a regex for it, it would be relative easy to implement this feature in other tools as well.
 
-
+\section{Integrating the NoteSet Data Container in MCM}
+In order to enable MCM to load NoteSets, a very minimal Viewer was added to one of the main Viewers, which allows to copy-paste and load NoteSets, following the syntax specification described in section \ref{subsection:ns_serialization}. Internally, during loading these NoteSets were converted into Notelists, the standard Note data container object used in MCM, thus there was no major MCM refactoring to be done in the course of implementing this feature. Albeit very simple, this viewer was positively received by developers and adaptation specialists likewise. Later on I added a small feature allowing to export MCM Notelists as NoteSets (ASCII files).
+\begin{figure}
+ \includegraphics[width=\linewidth]{images/mcm_ns_Loader.png}
+   \caption{NoteSet Loading Viewer in MCM}\label{fig:ns_loader}
+\end{figure}
