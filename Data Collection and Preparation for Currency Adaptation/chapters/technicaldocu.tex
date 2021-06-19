@@ -1,0 +1,142 @@
+\chapter{ NoteSet Data Container Specification}
+\label{chap:technicaldocu}
+
+\section{NoteSet Specification}
+\subsection{Motivation}
+By introducing the NoteSet as a new data container the primary goal is not to introduce a new data format. Firstly, because this would entail a longer process of defining a format schema and approval of various departments, the potential users of the new format, as well as a long introduction phase. Secondly, a data format is always restrictive in that it imposes an absolute way of how data should be thought of. The goal of introducing the NoteSet is exactly the opposite: We want users to think of a data collection as exactly that and not more: A collection of data elements, that at least for now does not come with a set of restrictions and rules of its own, or with as little as possible. In our case, this means that a NoteSet is just a set of notes which can be found in our Data Lake, or put differently: a set of Note IDs. In section \ref{noteset_goal} we listed the advantages and requirements for the new data container. In this section the steps undertaken to reach them will be specified.
+\subsection{Problems with the Notelist format}
+Even though the Notelist format (see section \ref{section:notelist}) has been established as a de facto standard, there are some disadvantages that come with it and that the introduction of the NoteSet data container hopes to address:
+\begin{itemize}
+\item Too much flexibility: Since Notelists are annotatable on a per-note basis and not on a per-set basis, there is no limit to mixing notes from different currencies, denomination etc. within the same list. This can lead to the temptation to store all notes a user works with over a timespan of months or longer in one single big Notelist. However this defeats one of the Notelist's original purposes namely creating more clarity by storing notes into use-case-specific sets that can be re-used by others. 
+\item Readabililty: Large notelists can get hard to read (and even harder to compare), due to the bulk of annotational information which in most cases is redundant. 
+\item Insufficient congruity with MOVEm Data Service APIs: Since the Notelist Format requires the presence of a file path, it is not possible to directly generate Notelists from MDS queries. If we query notes from MDS we get back a JSON structure containing the note data stored in the NIF, but no file location (The NIF does not store file location). Thus, we have to get the file path for each File ID with an additional MFX query and consequently increase the amount of queries. This is still feasible, but it slows down the generation of data sets.\footnote{The necessity of the file path in the Notelist hails from a time where the MFX service had not yet been establised. Therefore the Notelist needed to know the file location of each NIF on the local file system, in order to be able to load it. Today, where MFX is used to load the notes from the Data Lake, the NIF's File ID is enough information for locating and loading it.}\par Furthermore, the Notelist format requires the presence of an outdated GUID for each note. In other words, while the Note ID is the unique note identifier in the universe of MDS and MFX, the Notelist always requires an additional identifier.
+\end{itemize}
+\subsection{NoteSets as equivalence classes}
+One distinguishing feature of NotSets is that they will not have a per-note labelling but one labelling for the entire set, the NoteSet annotation. This is in the spirit of the adaptation specialist's way of working with data, insofar that they are generally not interested in the individual notes as such, but rather in an algorithm's performance on a particular set of -- correctly labelled -- notes. Thus we can think of NoteSets as equivalence classes where the equivalence relation is defined by the NoteSet's annotation. The NoteSet Annotation is specified below in section \nameref{ns_annotation_spec}
+\subsection{Serialization}
+\label{subsection:ns_serialization}
+Since NoteSets are basically just a collection of IDs, we will store them as text files in ASCII format. In a generic NoteSet, each line will represent a note. We do allow the following rules and elisions, some of whose usage will make the serialized form more compact, if parsing slightly more complicated:
+\begin{enumerate}
+\item Notes within the same file can be listed on the same line, e.g.:
+\begin{align*}
+374DB8C13B9B1DB8C42C1B109DE3BBD5:1 \\
+374DB8C13B9B1DB8C42C1B109DE3BBD5:2 \\
+374DB8C13B9B1DB8C42C1B109DE3BBD5:3 \\
+374DB8C13B9B1DB8C42C1B109DE3BBD5:4 \\
+374DB8C13B9B1DB8C42C1B109DE3BBD5:5 \\
+374DB8C13B9B1DB8C42C1B109DE3BBD5:12
+\end{align*}
+is equivalent to:
+\begin{align*}
+374DB8C13B9B1DB8C42C1B109DE3BBD5:1-5,12
+\end{align*}
+\item If we mean to include all the notes in a file, we can reference them just be the File ID. Thus, assuming that a file contains 100 note recordings:
+\begin{align*}
+374DB8C13B9B1DB8C42C1B109DE3BBD5
+\end{align*}
+is equivalent to:
+\begin{align*}
+374DB8C13B9B1DB8C42C1B109DE3BBD5:1-100
+\end{align*}
+and also equivalent to:
+\begin{align*}
+374DB8C13B9B1DB8C42C1B109DE3BBD5:1 \\
+374DB8C13B9B1DB8C42C1B109DE3BBD5:2 \\
+374DB8C13B9B1DB8C42C1B109DE3BBD5:3 \\
+374DB8C13B9B1DB8C42C1B109DE3BBD5:4 \\
+...\\
+374DB8C13B9B1DB8C42C1B109DE3BBD5:100
+\end{align*}
+\item We will allow comments, preceded by \#
+\item Any software with a NoteSet export feature will use the generic way of just listing the individual Note IDs and not use the abbreviated forms presented above
+\end{enumerate}
+\begin{figure}[!htb]
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{images/notesetpicture1sm.png}
+  \caption{Extract of a generic NoteSet file}\label{fig:ns_example_1}
+\endminipage\hfill
+\minipage{0.49\textwidth}
+  \includegraphics[width=\linewidth]{images/notesetpicture2.png}
+  \caption{Extract of a NoteSet file using abbreviations and comments}\label{fig:ns_example_2}
+\endminipage\hfill
+\end{figure}
+
+\subsection{The pynoteset library}
+Since there is already a comprehensive Python toolchain for Adaptation Software, it was an obvious choice to implement a library  \emph{pynoteset}-  This small library can generate NoteSet object from ASCII-files or lists of FileIds/NoteIds, and perform the classical set-theory operations on NoteSets. The features of the pynoteset library can be summarized as follows: 
+\begin{enumerate}
+\item generate NoteSet objects from files
+\item export NoteSet objects to ASCII files
+\item annotate NoteSet objects and parse string annotations
+\item merge NoteSet objects: for two NoteSets $A$ and $B$ generate the NoteSet $A \cup B$.
+\item intersect NoteSet objects: for two NoteSets $A$ and $B$ generate the NoteSet $A \cap B$.
+\item compare NoteSet objects: for two NoteSets $A$ and $B$ generate the NoteSet $A\backslash B$ and $B\backslash A$. 
+\end{enumerate}
+
+The library consists of three main classes, the NoteSet class, the NoteSetAnnotation class and the NoteSetConverter class. The latter's purpose is to generate NoteSet objects from files and lists of strings, a functionality that was outsourced into a converter class because of a dependency on MDS, which I didn't want to have in the NoteSet class itself\footnote{The reason for this dependency is the generosity of the NoteSet serialization syntax as specified in section \ref{subsection:ns_serialization}: Remember that if we mean to include all the notes in a file, we can reference them just be the File ID. Internally however, the NoteSet object has to know the number of notes in a file. Therefore, in the case where just a File ID is given, we have to query the number of notes (property ``note\_count``) from the MDS API.} See the pynoteset class diagram figure \ref{fig:pynoteset} for reference.\
+Furthermore, a converter class NoteSet2Notelistfile has been added to the library \emph{notelistfile}, which allows the conversion of NoteSets to Notelist, the standard XML based format currently in use (cf. section \ref{section:notelist}). This functionality is particularly powerful since a majority of the Python toolchain already uses a Notelist class internally. The converter thus provides an interface for the NoteSet object to be used in other tools.\par
+For deployment of this library a Bitbucket CI/CD pipeline is used, which deploys the package to a software repository manager (JFrog Artifactory). Thus registerered Artifactory users can install the pynoteset package like any other using e.g. \emph{pip}.
+\begin{figure}
+ \includegraphics[width=\linewidth]{images/pynoteset.png}
+   \caption{Class Diagram of \emph{pynoteset}}\label{fig:pynoteset}
+\end{figure}
+
+\section{NoteSet Annotation Specification}
+\label{ns_annotation_spec}
+
+\subsection{Motivation}
+As already mentioned, we introduce NoteSets as a container for notes which are equivalent with respect to a yet to be defined annotation, the labeling of the set. Since the NoteSet itself is basically just a set of IDs or keys, all other substantial information will be in the annotation. The first challenge is to select the properties which should be part of the annotation. The second is the question of how to persist the annotation within the NoteSet. Since we do not want to introduce a new format definition, it's not possible to add the annotation as a sort of header in an XML or JSON format. This would mean that a new format has been introduced and some kind of schema would have to be defined for it. \par
+The only option that remains is thus to store the set's annotation within the filename itself when exporting a NoteSet. For this a special file format string has to be introduced (see below).
+\subsection{Criteria for selecting annotational elements}
+The selection of the elements which should be part of the annotation was overall not that easy, on the one hand because there are hundreds of properties in a NIF file and we want to be as specific as possible, on the other hand, a NoteSet's annotation should be as simple as possible, namely because we want to persist the annotation in the filename, which ideally should be a readable and not too long string.
+Finally after having consulted with the adaptation specialist team, the selection was done by the following criteria: The mandatory properties are properties which are needed to identify a particulat type of note in MCM. The optional properties (with the exception of comment) are criteria for which are not mandatory to identify a note, but for which it is likely that a user wants to split or filter a set of notes by them when analyzing or training algorithms.
+\subsection{Mandatory Elements of the NoteSet Annotation}
+The following attributes form the mandatory part of the NoteSet's annotation. These are all derived from properties set in the NOTEMSG2 chunk of the NIF file. 
+\begin{description}
+  \item[Currency] Corresponds to the ISO string matching the the numeric ISOCODE value in the NOTEMSG2 Chunk.
+  \item[IsoGroup] A sub-specification of a currency that is mainly used for the currency GBP (Great Britain Pound), which has different banknotes and issuers for the groups England (BOE), Scotland (SCO), Northern Ireland (IRL), Guernsey (GUE), Jersey (JER) and Isle of Man (MAN). For example, the England GBP would be abbreviated as GBPBOE, the Irish one as GBPIRL.
+  \item[Emission] Emission of the notes in the NoteSet, corresponds to the value of the Chunk EMISSION in NOTEMSG2
+  \item[Orientation] Orientation of the notes in the NoteSet, corresponds to to ORIENTATION in NOTEMSG2
+\item[Type] NoteType, a numeric value to identify the CDF reference note this note is matched to. In some cases there is more than one reference note for the same denomination, emission and orientation (for example when a currency has different issuers/printers that each print their own distinctive banknotes)
+\end{description}
+
+\subsection{Optional Elements of the NoteSet Annotation}
+The following attributes are optional elements of a NoteSet Annotation. They are not identifying properties but allow to specify a NoteSet.
+
+\begin{description}
+\item[Class] Corresponds to the value CATEGORY in NOTEMSG2 Chunk and is an attribute for authenticity and fitness of a banknote, for example, Category 4a notes are authentic and fit notes, Category 2 are counterfeits. It's a likely use case that a user would want to split notes across a currency by category to train and analyze fitness and security algorithms. 
+\item[Security and Fitness flags Flags] Security and Fitness Flags are set by certain algorithms and indicate that a note might be classified as unfit or counterfeit. For example, the fitness flag STAIN indicates that the note has some kind of smudging, the security flag ROBBERY\_INK indicates that the presence of robbery ink was detected. 
+\item[Reject Reason] This is an enum value found corresponding to the value REJECT\_REASON in NOTEMSG2 chunk. It indicates the reason why a note was rejected or that it was not rejected.
+\item [Comment] This is an optional comment added by the user and the only value within the NoteSet annotation which does not come from the NIF file
+\end{description}
+
+\subsection{Specifying the file format string}
+As already stated, the NoteSet's annotation is to be converted into a filename when exporting a NoteSet to ASCII. The file format string to be constructed has to be readable, complete and indicate the optionality of properties, i.e. distinguish the optional properties from the mandatory ones. Finally, the goal is to codify the format into a regular expression and implement an annotation parser in the python noteset library \emph{pynoteset}.
+\subsubsection{Preliminary Decisions}
+\begin{itemize}
+\item The file format string must be defined in a regular expression. Thus any tool which would later adopt the paradigm of NotSets could easily validate NoteSet annotations independent of the programming language.
+\item Generic placeholder for non-specified mandatory properties: Since we allow NoteSets to be merged, we have to anticipate the scenario where e.g. a NoteSet contains notes of various denominations. Therefore we need a placeholder for all mandatory properties indicating the state of 'Undefined' or mixed. This placeholder is 'XXX' for currencies and isogroups and 'X' otherwise, a practice which is already in use in the recording of note data and thus one that users are already familiar with. 
+\item Allowing of both upper- and lowercase spelling: While it is common to use uppercase notation for currency ISO codes and isogroups and lowercase spelling for emissions, we will allow both upper- and lowercase notation to make the already fairly complicated string format less restrictive.
+\end{itemize}
+Finally, from these requirements such a regular expression could be defined as follows:
+
+\begin{center} 
+\begin{verbatim}
+([A-Z]{3}){1,2}_(([0-9]*[.])?[0-9]|X)*_([a-z]|X)_([1-4]|X)_([1-9]+|X)(_CL[1-4])?(_SF\(([A-Z_0-9]+)(&[A-Z_0-9]+)*\))?(_FF\(([A-Z_0-9]+)(&[A-Z_0-9]+)*\))?(_[a-zA-Z0-9]*)?
+\end{verbatim}
+\end{center} 
+The examples in figure \nameref{fig:ns_example} illustrate the application of this regular expression, i.e. some valid NoteSet Annotation file strings
+\begin{figure}[!htb]
+  \includegraphics[width=0.49\linewidth]{images/annotation_example1.png}
+  \includegraphics[width=0.49\linewidth]{images/annotation_example2.png}
+  \includegraphics[width=0.49\linewidth]{images/annotation_example3.png}
+  \caption{NoteSet Annotation Examples}\label{fig:ns_example}
+\end{figure}
+
+A parser for annotation strings was included in the pynoteset library and since we have defined a regex for it, it would be relatively easy to implement this feature in other tools as well.
+
+\section{Integrating the NoteSet Data Container in MCM}
+In order to enable MCM to load NoteSets, a minimal viewer was added to one of the main viewers, which allows to copy-paste and load NoteSets, following the syntax specification described in section \ref{subsection:ns_serialization}. Internally, during loading these NoteSets were converted into Notelists, the standard Note data container object used in MCM, thus there was no major MCM refactoring to be done in the course of implementing this feature. Albeit very simple, this viewer was positively received by developers and adaptation specialists likewise. Later on I added a small feature allowing to export MCM Notelists as NoteSets (ASCII files).
+\begin{figure}
+ \includegraphics[width=\linewidth]{images/mcm_ns_Loader.png}
+   \caption{NoteSet Loading Viewer in MCM}\label{fig:ns_loader}
+\end{figure}

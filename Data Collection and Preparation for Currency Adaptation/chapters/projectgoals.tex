@@ -1,0 +1,37 @@
+\chapter{ Project Goals}
+\label{chap:projectgoals}
+
+\section{Initial Position}
+\subsection{Background}
+The 80/20 rule of Data Science states that most data scientists spend about 20\% of their time on actual data analysis and 80\% of their time finding, cleaning and preparing data. The process of readying data for the training, testing and implementation of an algorithm thus is not only a highly important step in the Data Science Lifecycle, it's maybe the costliest.\par
+CI Tech Sensors, based in Burgdorf, has over 30 years experience in the field of banknote image recognition. One of its core competences is the development of currency adaptation software, which is loaded onto the banknote reader, and enables it to identify and classify banknotes for specific currencies, as well as determine their authenticity and fitness. This software is continuously updated and developed by a dedicated team of Currency Adaptation Specialists at CI Tech Sensors, whose work relies on the availability of a Data Lake of Banknote Raw Data. \par
+Over the last three years, there has been ground-breaking shift in raw data management: From folder-based data storage on both local and central file drives -  which heavily relied on filenames for identification and was thus prone to ambiguity and duplication of data - towards a centralized Data Lake, where each file was given a unique ID. At the same time a cloud based Microservice architecture (MOVEm Data Management Toolchain) for the management and maintenance of this Data Lake was developed.
+This development comes with a number of exciting possibilities, some of which to explore is the goal of this project. The focus will be on the collection and preparation of tailored banknote sets.\par
+
+In earlier days, the collection and preparation of banknote data had to be manually done by the Currency Adaptation Specialist. They would have to navigate to the relevant folder, select the relevant files and sort them by denomination, emission, orientation and other criteria, all information taken from a file's annotation. Not only is this process cumbersome and error-prone in itself, it also solely relies on the file annotation, which is made by a human annotator before the actual banknote recording, and thus can contain errors as well.\par
+Today it's already possible to group banknote raw data into sets, using a text-based file format called \emph{Notelist}. Adaptation specialists will manage and create their own Notelist files locally according to their specific needs. Notelists contain references to individual file IDs and Note IDs as well as additional annotational information and the file path where files can be found. However this format comes with some problems of its own as we will see later.\par
+
+
+\section{Project Goals}
+\label{sec:goals}
+
+\subsection{Annotated Reference Data Sets}
+\label{subsection:goal_1}
+We want to find a way to define, generate and persist annotated note data sets that can be used as reference data sets in the context of currency adaptation. By reference data set we mean a reliable and authoritative set of note data, that can be used for training and development of CDFs. An example for a reference data set could be the set of ``all EUR 5 b orientation 1 notes``\footnote{The concept of orientation refers to the banknote's orientation when transported through the reader. There are 4 possible orientations: frontside upright (1), backside upright (2), frontside upside down (3) and backside upside down (4)} or ``all CNY 100 b counterfeits``.\par 
+These data sets should fulfil the following criteria:
+\begin{itemize}
+\item Accuracy (with respect to annotation): Data records have a correct and binding annotation.
+\item Consistency: When regenerating a data set, it should always contain the same notes for a given state of the Data Lake.
+\item Completeness: In the generation of reference note data sets, generally all data in the Data Lake should be considered.
+\end{itemize}
+
+
+\subsection{Mechanism for generating tailored Data Sets according to context-dependent criteria}
+
+More generally and based on requirement \ref{subsection:goal_1} of reference note data sets, it should be possible to generate data sets according to user specific criteria. For example, the set of all outliers for algorithm result $X$ within a specific folder, or all Category 3 (suspected counterfeits) within a particular directory of field data.
+A process should be installed which allows specialist users to generate such datasets. These datasets will have to fulfil the same criteria as the reference data sets.
+
+
+\subsection{Persisting Note Data Sets}
+
+We want to have a lightweight, cost-friendly way to persist the generated note data sets. Especially, the format in which we persist the data sets should be independent of individual file locations of NIF files and make use of the advantages of the MFX and MDS microservices.

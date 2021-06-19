@@ -1,7 +1,0 @@
-\chapter{Note Set Loading in MCM}
-\label{chap:nsgeneration}
-
-\section{Introduction}
-
-One of MCM's main viewers is the NotelistBrowser, which manages all Notelists a user has loaded into MCM an allows working with multiple Notelists in the same session. Into this viewer a small menu item has been added, which allows the loading of NoteSets in the format specified in Chapter 5. Internally, there is no new data structure added to MCM. Instead, the IDs specifying the NoteSet are preprocessed and sorted, fetched from MCM and filled into MCMs internal NoteList object. Thus, while the NoteSet data container is still in an experimental stage, we can already use it in the main adaptation software MCM without introducing a new model therein. Similarly, an export function has been added which allows exporting Notelists in MCM's Notelist Browser as NoteSets. With this feature the convertability of NoteLists to NoteSets is ensured on the .NET side. (The python library pynoteset can already convert in both directions).
-

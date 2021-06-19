@@ -40,6 +40,7 @@
 \usepackage{newunicodechar}
 \usepackage[bottom]{footmisc}
 \usepackage{sectsty}
+\usepackage{subcaption}
 
 \newcommand{\textprime}{\ensuremath{'}}
 \newunicodechar{′}{\textprime}
@@ -170,7 +171,7 @@
 \setcounter{page}{1}
 \cleardoublepage
 \phantomsection 
-\addcontentsline{toc}{chapter}{Management Summary}
+\addcontentsline{toc}{chapter}{Abstract}
 \include{leader/management_summary}
 \cleardoubleemptypage
 %---------------------------------------------------------------------------
@@ -204,11 +205,11 @@
 
 % Glossary
 %---------------------------------------------------------------------------
-\cleardoublepage
-\phantomsection 
-\addcontentsline{toc}{chapter}{Glossary}
-\renewcommand{\glossaryname}{Glossary}
-\printglossary
+%\cleardoublepage
+%\phantomsection 
+%\addcontentsline{toc}{chapter}{Glossary}
+%\renewcommand{\glossaryname}{Glossary}
+%\printglossary
 %---------------------------------------------------------------------------
 
 % Listings
@@ -229,9 +230,9 @@
 
 % Attachment:
 %---------------------------------------------------------------------------
-\appendix
-\settocdepth{section}
-\include{appendix/appendixexemple}
+%\appendix
+%\settocdepth{section}
+%\include{appendix/appendixexemple}
 %\include{appendix/appendixexempleB}
 %\include{appendix/contentCDROM}
 %---------------------------------------------------------------------------

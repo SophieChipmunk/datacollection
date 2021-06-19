@@ -1,0 +1,59 @@
+\chapter{ Technical Background}
+\label{chap:technicalbackground}
+
+\section{Introduction}
+This section will provide an overview about existing technologies of CI Tech Sensors, namely the ones which are involved and affected by this project.
+
+\section{The NIF File}
+NIF stands for \emph{Note Information File} and is a binary file format which stores note transaction records. In other words a NIF file is what you get when processing a set of notes through a banknote reader. The NIF stores Metadata, Note Record Data and Image Data, it thus contains both raw data and data calculated by the reader. It is encoded in a proprietary binary format, which uses a tree-like structure of so called Chunks, parts of data with a unique ID and a fixed length to store and structure data. An example of a  relevant Chunk, which is referenced throughout this documentation is the NOTEMSG2 (Note Message 2, historically because there used to exist a Note Message 1 Chunk) Chunk, which is present once for each note recorded and which contains the most relevant information about a note's recognition and classification by the reader. This information can then be used for labelling our dataset. \par
+A NIF has a unique ID (the file's MD5 checksum), which is also called File ID. Derived from it, the Note ID can be defined as the concatenation of the File ID and the note's\footnote{We informally speak of notes but in this context actually do not mean notes as an abstract concept like ``The CHF 10 banknote`` but rather \emph{a recording of a physical note}. Simply put: A note is a record of a physical banknote, which was done by a banknote reader and is stored in a uniquely identifiable NIF file. Technically, such a note recording can also be uniquely identified by the note's serial number and the angle with which it passes through the reader (a note will likely never have the exact same angle in different recordings)} FilePosition, which corresponds to the note's position in the bundle, e.g. the first note has FilePosition 1 etc. Thus
+\begin{align*}
+8AD47001CC4BD7B49783B4D6125F9551:1
+\end{align*}
+is the unique ID of the first note in the NIF file with checksum $8AD47001CC4BD7B49783B4D6125F9551$.
+
+\begin{figure}
+\includegraphics[width=0.35\textwidth]{images/NoteMsg2Chunk}
+  \caption{Content of NOTEMSG2 Chunk as displayed in a proprietary ChunkFormat parsing software}\label{fig:notemsg2}
+\end{figure}
+
+\section{The CDF file}
+The CDF (\emph{Currency Data File}) is a binary parameter file, which contains all the required information to enable the banknote reader to process, classify and validate all banknotes of one currency. It stores metadata as well as algorithmic recognition data, which specifies the algorithms used, their order of execution and the respective parametrization for each algorithm and banknote type. The CDF is released independently of the actual banknote reader software and the development and maintenance of CDFs is one of the main tasks of Currency Adaptation Specialists. Typical reasons why a CDF would need to be adjusted are the release of a new banknote or the emergence of a new type of counterfeit which the CDF needs to be able to detect.
+
+\section{MOVEm File Index}
+MFX (MOVEm File Index) is a central index of all files in the Data Lake, allowing the lookup of a file's location in the Lake. The Data Lake is hosted on a network drive in the proprietary Cloud of CI Tech and its partner companies and stores both test data (data which was recorded inhouse with a dedicated recording tool for testing) and field data (data which was recorded by banks or other clients on productive banknote readers) in its raw, unaltered form. It uses hierarchical directory structure, which is however only loosely regulated. There is new data being continuously added to the Data Lake using a dedicated procedure, which we will not delve into here.\par MFX is a Flask application with a REST API backend. In addition to allowing the lookup of individual files, it lists the indexed directories as well as all duplicate and defect files in the lake. Moreover, MFX is integrated into MCM, insofar as MCM has access to the MFX API and can thus load directly from the Data Lake. This integration made it possible to load files in MCM by File ID only.  The following figure visualizes how MFX is used for path lookup within MCM:
+\begin{figure}[ht!]
+\includegraphics[width=1.0\textwidth]{images/mfx_usage.png}
+  \caption{MCM uses MFX for lookup of file paths in the Data Lake}\label{fig:mfx_usage}
+\end{figure}
+
+
+
+\section{MOVEm Data Service}
+MDS (MOVEm Data Service) is another REST based Flask web application, with the MDS database in the background. It allows the lookup of NIF data, namely on the levels of NIF (metadata, recording data, device data etc.), Note (all note specific data recorded by the reader, such as algorithm results or the values of the NOTEMSG2 chunk presented above), and Image (the actual note images taken by the reader cameras).\par Currently the MDS database stores about 322 GB of NIF data, whereas the Data Lake stores about 6.67 TB of NIFs, which are about 1110714 individual files. The MDS application also entails a parsing module, which converts the NIF elements into corresponding Python objects, that constitute the JSON responses of the REST APIs. \par The big improvement that comes with introducing MDS is that it allows lazy loading of NIF data. Depending on the use case, MDS allows fetching NIF data (metadata on the file, like the time of recording, the reader used etc.), Note data, or Image data i.e. actual images. This is a huge difference to the MCM architecture, where always the entire NIF is loaded and all images cached. In many use cases, adaptation specialists analyze algorithmic data on the level of the note only and don't need all of the images or any images at all. There are even NIF analyzing tools in the Currency Adaptation Software Toolchain that do not support the displaying of images at all, but still unnecessarily load and cache all images, because they use and underlying MCM core for the loading of NIF data. The promise of MDS in the long run is therefore improved loading time and less use or memory, mainly due to the aforementioned lazy loading of notes and images.
+However, to achieve this goal, the architecture of MCM would have to be substantially changed.\par Figure \ref{fig:mds_overview} visualizes the MFX-MDS architecture.
+\begin{figure}[ht!]
+\includegraphics[width=1.0\textwidth]{images/MFX_MDS.png}
+  \caption{MFX and MDS architecture}\label{fig:mds_overview}
+\end{figure}
+
+\section{MOVEm Simulator}
+The MOVEm Simulator is a user interface to the core application of the MOVEm firmware, the embedded banknote reader software. It's a desktop application written in Python and Qt and its purpose is to test CDFs without the need of operating a physical banknote reader and actual physical banknotes. Input of the MOVEm simulation are existing NIF files. The simulator then takes the raw data from these files and calculates classification, sorting and algorithm results the same way one can expect from a physical test with real banknote readers. Output of the simulation are so called Level-1 .NIF files. These are valid, minimal NIF files which contain all the computed results, but no image data (which of course the simulator cannot generate). 
+
+\section{MOVE Currency Modeller}
+MOVE Currency Modeller (MCM) is the adaptation specialist's main tool which they use to create and test Currency Data Files (CDF). Typically, users load raw data (NIF files) into MCM and use this data to develop. test and improve CDFs or train a particular algorithm within a CDF. MCM has an interface to the embedded software algorithmic framework and thus is able to simulate the individual algorithms used by the banknote reader. MCM is a desktop application which has been developed over years and contains a huge range of viewers and functionality. It's a very powerful tool but also a monolithic one, and as of today not very modularizable. Although MFX is already integrated into MCM as mentioned above, MDS isn't yet. The integration of MDS is in the works and comes with the promise of performance improvements, because it would allow the lazy loading of individual notes or images from the MDS API, as opposed to always having to parse and load the entire NIF, even if one just wants to look at a particular note or image therein.
+
+\section{The Notelist Format}
+\label{section:notelist}
+Since the NIF file is immutable, the need to persist sets of notes requires a dedicated format. The Notelist format is an XML-based format with the file extension ``.nl``. It is structured in a hierarchical way and consists of the following elements:
+\begin{itemize}
+	\item Notelist: A list of NoteContainers
+	\item NoteContainer: A list of NoteItems, typically refers to a NIF file
+	\item NoteItem: refers to a single note, contains its annotation/label
+\end{itemize}	
+The original purpose of the Notelist format was on the one hand the already mentioned possibility to group notes from different NIFs together. Another feature, is the per-note annotation (NoteItem), which allows the adaptation specialist to annotate notes differently from and independently of the reader's recognition/labeling. For example, a note might be recognized as a Category 4 (genuine) by the current CDF but the adaptation specialist knows it's actually a new type of counterfeit and thus wants to label it as a counterfeit (Category 2) when using it in the training data.\par
+Notelists can be loaded in MCM and today constitute the standard means of persisting sets of notes in the context of currency adaptation. 
+\begin{figure}[ht!]
+\includegraphics[width=1.0\textwidth]{images/Notelist.png}
+  \caption{Extract of a Notelist file}\label{fig:notelist}
+\end{figure}
